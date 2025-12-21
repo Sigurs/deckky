@@ -44,17 +44,20 @@ If you are an LLM, please read LLM.md.
 ## Quick Start
 
 ```bash
-# 1. Install
+# 1. Install (interactive - just type what you want)
 ./install.sh
+# When prompted, enter: all, ha,watch, obs,watch, etc.
 
-# 2. Install optional dependencies (if needed)
-source venv/bin/activate
-pip install -e ".[all]"  # or .[obs] or .[homeassistant]
+# Or use command-line options for scripts:
+./install.sh --ha     # Home Assistant + config auto-reload
+./install.sh --obs    # OBS + config auto-reload
+./install.sh --all    # Everything
+./install.sh --core   # Core only
 
-# 3. Configure (auto-created by install.sh)
+# 2. Configure (auto-created by install.sh)
 nano ~/.config/deckky/config.yaml
 
-# 4. Run
+# 3. Run
 deckky
 ```
 
@@ -64,9 +67,26 @@ deckky
 
 ## Dependencies
 
-**Core**: `streamdeck`, `Pillow`, `PyYAML`
-**Optional**: `obs-websocket-py`, `websockets`, `aiohttp`, `inotify_simple`
-**System**: `xdotool` (X11) or `ydotool` (Wayland), `pactl` (volume)
+### Python Dependencies
+
+**Core** (always installed):
+- `streamdeck>=0.9.5` - Stream Deck device support
+- `Pillow>=10.0.0` - Image processing for button labels
+- `PyYAML>=6.0` - YAML configuration parsing
+
+**Optional Features** (install as needed):
+- `[obs]` - OBS WebSocket control
+  - `obs-websocket-py>=1.0.0`
+- `[homeassistant]` - Home Assistant integration
+  - `websockets>=11.0.0`
+  - `aiohttp>=3.8.0`
+- `[watch]` - Efficient config file auto-reload (Linux only)
+  - `inotify_simple>=1.3.5`
+- `[all]` - All optional features
+
+**System Dependencies**:
+- `xdotool` (X11) or `ydotool` (Wayland) - Keyboard input simulation
+- `pactl` - Volume control (usually pre-installed with Pipewire/PulseAudio)
 
 ## Configuration
 

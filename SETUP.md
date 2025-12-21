@@ -40,6 +40,76 @@ Unplug and replug your Stream Deck.
 
 ## Installation
 
+### Quick Install
+
+The easiest way to install Deckky is using the interactive install script:
+
+```bash
+./install.sh
+```
+
+The script will:
+1. Create a virtual environment
+2. Ask which features you want - just type what you need:
+   - `all` - Everything
+   - `ha,watch` - Home Assistant + config auto-reload
+   - `obs,watch` - OBS + config auto-reload
+   - `ha,obs` - Both integrations, no auto-reload
+   - `watch` - Config auto-reload only
+   - `core` or `none` - Core only
+3. Install selected dependencies
+4. Create config directory at `~/.config/deckky/`
+5. Copy example config if none exists
+
+**Non-interactive mode** (useful for scripts):
+```bash
+./install.sh --ha     # Home Assistant + config auto-reload
+./install.sh --obs    # OBS + config auto-reload
+./install.sh --all    # All features
+./install.sh --core   # Core only
+./install.sh --help   # Show all options
+```
+
+### Installing Optional Features
+
+After running `install.sh`, activate the virtual environment and install the features you need:
+
+```bash
+source venv/bin/activate
+
+# Install all optional features
+pip install -e ".[all]"
+
+# OR install only specific features:
+
+# Just Home Assistant support + config auto-reload
+pip install -e ".[homeassistant,watch]"
+
+# Just OBS support + config auto-reload
+pip install -e ".[obs,watch]"
+
+# Both integrations without auto-reload
+pip install -e ".[homeassistant,obs]"
+
+# Just config auto-reload (inotify-based, more efficient than polling)
+pip install -e ".[watch]"
+```
+
+**Available extras:**
+- `obs` - OBS WebSocket control (`obs-websocket-py`)
+- `homeassistant` - Home Assistant integration (`websockets`, `aiohttp`)
+- `watch` - Efficient config file auto-reload using inotify (`inotify_simple`)
+- `all` - All optional features
+
+**Note:** If you don't install optional features:
+- OBS buttons will be silently ignored (logged as error)
+- Home Assistant buttons will be silently ignored (logged as error)
+- Config auto-reload will use polling instead of inotify (less efficient but still works)
+
+### Manual Installation
+
+If you prefer manual installation:
+
 1. Clone or navigate to the deckky directory
 2. Create and activate the virtual environment:
 ```bash
@@ -47,9 +117,13 @@ python -m venv venv
 source venv/bin/activate
 ```
 
-3. Install Python dependencies:
+3. Install with desired features:
 ```bash
-pip install -r requirements.txt
+# Core only
+pip install -e .
+
+# Or with specific features
+pip install -e ".[homeassistant,watch]"
 ```
 
 ## Configuration

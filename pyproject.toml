@@ -27,6 +27,11 @@ dependencies = [
     "PyYAML>=6.0",
 ]
 
+# Optional features - install with: pip install -e ".[feature_name]"
+# Examples:
+#   pip install -e ".[all]"                    # Everything
+#   pip install -e ".[homeassistant,watch]"    # Just Home Assistant + auto-reload
+#   pip install -e ".[obs,watch]"              # Just OBS + auto-reload
 [project.optional-dependencies]
 obs = ["obs-websocket-py>=1.0.0"]
 homeassistant = ["websockets>=11.0.0", "aiohttp>=3.8.0"]
