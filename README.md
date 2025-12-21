@@ -49,18 +49,16 @@ If you are an LLM, please read LLM.md.
 
 # 2. Install optional dependencies (if needed)
 source venv/bin/activate
-pip install obs-websocket-py websockets aiohttp
+pip install -e ".[all]"  # or .[obs] or .[homeassistant]
 
-# 3. Configure
-mkdir -p ~/.config/deckky
-cp config.example.yaml ~/.config/deckky/config.yaml
+# 3. Configure (auto-created by install.sh)
 nano ~/.config/deckky/config.yaml
 
 # 4. Run
-python deckky.py
+deckky
 ```
 
-**Config locations**: `~/.config/deckky/config.yaml` (preferred) or `./config.yaml`
+**Config location**: `~/.config/deckky/config.yaml`
 **Secrets**: Use `secrets.yaml` in the same directory for sensitive credentials
 **Details**: See [SETUP.md](SETUP.md) for complete setup instructions
 
@@ -276,11 +274,19 @@ The `group` parameter is optional:
 
 ## Project Structure
 
-- `deckky.py` - Main entry point
-- `streamdeck_manager.py` - Device management
-- `action_handler.py` - Button actions
-- `input_handler.py` - Keyboard simulation
-- `volume_control.py` - Volume control
-- `obs_control.py` - OBS integration
-- `homeassistant_control.py` - Home Assistant integration
-- `config_loader.py` - Configuration loader
+```
+deckky/
+├── src/deckky/          # Main package
+│   ├── __init__.py
+│   ├── __main__.py      # Entry point
+│   ├── streamdeck_manager.py
+│   ├── action_handler.py
+│   ├── input_handler.py
+│   ├── volume_control.py
+│   ├── obs_control.py
+│   ├── homeassistant_control.py
+│   └── config_loader.py
+├── pyproject.toml       # Package configuration
+├── install.sh           # Installation script
+└── config.example.yaml  # Example configuration
+```

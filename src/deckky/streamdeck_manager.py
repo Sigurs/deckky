@@ -8,9 +8,9 @@ from typing import Dict, Any
 from StreamDeck.DeviceManager import DeviceManager
 from StreamDeck.ImageHelpers import PILHelper
 from PIL import Image, ImageDraw, ImageFont
-from action_handler import ActionHandler
-from config_loader import ConfigLoader
-from volume_control import VolumeControl
+from deckky.action_handler import ActionHandler
+from deckky.config_loader import ConfigLoader
+from deckky.volume_control import VolumeControl
 
 logger = logging.getLogger(__name__)
 

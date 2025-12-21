@@ -1,0 +1,7 @@
+include README.md
+include SETUP.md
+include LLM.md
+include LICENSE
+include requirements.txt
+include config.example.yaml
+include install.sh

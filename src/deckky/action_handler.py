@@ -3,10 +3,10 @@
 import logging
 import threading
 from typing import Dict, Any
-from input_handler import InputHandler
-from volume_control import VolumeControl
-from obs_control import OBSControl
-from homeassistant_control import HomeAssistantControl
+from deckky.input_handler import InputHandler
+from deckky.volume_control import VolumeControl
+from deckky.obs_control import OBSControl
+from deckky.homeassistant_control import HomeAssistantControl
 
 logger = logging.getLogger(__name__)
 

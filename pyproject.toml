@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deckky"
+version = "0.1.0"
+description = "A simple, lightweight Stream Deck utility for Linux"
+readme = "README.md"
+requires-python = ">=3.8"
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "streamdeck>=0.9.5",
+    "Pillow>=10.0.0",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+obs = ["obs-websocket-py>=1.0.0"]
+homeassistant = ["websockets>=11.0.0", "aiohttp>=3.8.0"]
+watch = ["inotify_simple>=1.3.5"]
+all = [
+    "obs-websocket-py>=1.0.0",
+    "websockets>=11.0.0",
+    "aiohttp>=3.8.0",
+    "inotify_simple>=1.3.5",
+]
+
+[project.scripts]
+deckky = "deckky.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+deckky = ["py.typed"]

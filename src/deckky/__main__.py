@@ -7,8 +7,8 @@ import sys
 import yaml
 import logging
 from pathlib import Path
-from streamdeck_manager import StreamDeckManager
-from config_loader import ConfigLoader
+from deckky.streamdeck_manager import StreamDeckManager
+from deckky.config_loader import ConfigLoader
 
 logging.basicConfig(
     level=logging.INFO,
