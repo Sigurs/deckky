@@ -60,14 +60,26 @@ class StreamDeckManager:
 
         self.deck = streamdecks[0]
         self.deck.open()
-        self.deck.reset()
+
+        # Give the USB device a moment to stabilize after opening
+        time.sleep(0.1)
+
+        # Try to reset the device, but don't fail if it errors
+        # Some USB controllers have issues with the reset command
+        try:
+            self.deck.reset()
+        except Exception as e:
+            logger.warning(f"Failed to reset Stream Deck (continuing anyway): {e}")
 
         logger.info(f"Connected to {self.deck.deck_type()} "
                    f"({self.deck.key_count()} keys)")
 
         # Set brightness
         brightness = self.config.get('streamdeck', {}).get('brightness', 80)
-        self.deck.set_brightness(brightness)
+        try:
+            self.deck.set_brightness(brightness)
+        except Exception as e:
+            logger.warning(f"Failed to set brightness (continuing anyway): {e}")
 
         # Set up OBS status callback for visual feedback BEFORE initializing buttons
         if hasattr(self.action_handler, 'obs_control') and self.action_handler.obs_control:
@@ -730,5 +742,11 @@ class StreamDeckManager:
         # Close Stream Deck
         if self.deck:
             logger.info("Closing Stream Deck connection")
-            self.deck.reset()
-            self.deck.close()
+            try:
+                self.deck.reset()
+            except Exception as e:
+                logger.warning(f"Failed to reset Stream Deck during cleanup: {e}")
+            try:
+                self.deck.close()
+            except Exception as e:
+                logger.warning(f"Failed to close Stream Deck: {e}")
