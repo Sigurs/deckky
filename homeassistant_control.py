@@ -404,7 +404,7 @@ class HomeAssistantControl:
 
         # Determine button appearance based on current light state
         bg_color = 'black'
-        fg_color = '#7aa2f7'  # Tokyo Night blue (default/off state)
+        fg_color = '#7aa2f7'  # Default blue (default/off state)
 
         # Always use the label from button config (static label)
         label = button_config.get('label', '')
@@ -415,9 +415,9 @@ class HomeAssistantControl:
             logger.debug(f"Button setup for {entity_id}: is_on={is_on}, label='{label}'")
 
             if is_on:
-                fg_color = '#9ece6a'  # Tokyo Night green for lights that are on
+                fg_color = '#9ece6a'  # Green for lights that are on
             else:
-                fg_color = '#7aa2f7'  # Tokyo Night blue for lights that are off
+                fg_color = '#7aa2f7'  # Blue for lights that are off
 
         # Create a button image with determined colors
         font_size = button_config.get('font_size', 'dynamic')

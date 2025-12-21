@@ -25,99 +25,50 @@ If you are an LLM, please read LLM.md.
 - Deafen toggle
 - Uses Discord's built-in hotkey system
 
-### OBS WebSocket Integration with Real-Time Visual Feedback
-- Scene switching with visual indicators (Tokyo Night green for active scenes)
-- Recording control (start/stop/toggle)
-- Streaming control (start/stop/toggle)
-- **Event-based updates** - instant visual feedback via WebSocket events
-- **Auto-reconnection** - automatically reconnects if OBS restarts
+### OBS WebSocket Integration
+- Scene switching, recording, and streaming control
+- Real-time visual feedback (green for active scenes, red for recording/streaming)
+- Event-based updates with auto-reconnection
 - Works with OBS 29+ (WebSocket v5)
-- Tokyo Night theme colors throughout
 
-### Home Assistant WebSocket Integration with Real-Time Visual Feedback
+### Home Assistant Integration
 - Light control (toggle, turn on, turn off)
-- **Event-based updates** - instant visual feedback via WebSocket events
-- **Auto-reconnection** - automatically reconnects if Home Assistant restarts
-- Works with Home Assistant WebSocket API
-- Tokyo Night theme colors throughout
-- Real-time light status indication (green when on, blue when off)
+- Real-time visual feedback (green when on, blue when off)
+- Event-based updates with auto-reconnection
 
-### Spatial Groups with Cross-Group Page Switching
-- Divide your Stream Deck into independent groups with separate page systems
-- Cross-group page switching allows buttons in one group to control pages in other groups
-- Perfect for having stable controls (like volume) that remain visible while other sections change pages
-
-### Performance Optimizations
-- **Event-driven architecture** - no polling loops, instant updates
-- **Intelligent caching** - fonts and button images cached for fast rendering
-- **inotify-based config watching** - instant config reloads (Linux)
-- **Low CPU usage** - efficient event callbacks instead of continuous polling
+### Advanced Features
+- **Spatial Groups** - Independent page systems with cross-group switching
+- **Event-driven architecture** - No polling, instant updates with minimal CPU usage
+- **Intelligent caching** - Fast rendering with cached fonts and images
 
 ## Quick Start
 
-1. Run the installation script:
 ```bash
+# 1. Install
 ./install.sh
-```
 
-2. Install OBS WebSocket dependency:
-```bash
+# 2. Install optional dependencies (if needed)
 source venv/bin/activate
-pip install obs-websocket-py
-```
+pip install obs-websocket-py websockets aiohttp
 
-3. Install Home Assistant WebSocket dependency:
-```bash
-source venv/bin/activate
-pip install websockets aiohttp
-```
-
-3. Create your configuration file:
-```bash
-# Option 1: XDG config directory (recommended)
+# 3. Configure
 mkdir -p ~/.config/deckky
 cp config.example.yaml ~/.config/deckky/config.yaml
 nano ~/.config/deckky/config.yaml
 
-# Option 2: Local directory (next to deckky.py)
-cp config.example.yaml config.yaml
-nano config.yaml
-```
-
-4. Run Deckky:
-```bash
-source venv/bin/activate
+# 4. Run
 python deckky.py
 ```
 
-**Config File Locations** (priority order):
-1. `~/.config/deckky/config.yaml` (preferred, follows XDG Base Directory spec)
-2. `./config.yaml` (next to deckky.py, for development/testing)
-
-**Secrets Management**:
-Deckky supports separating sensitive information (tokens, passwords) into a `secrets.yaml` file:
-- Place `secrets.yaml` in the same directory as your `config.yaml`
-- Secrets are deep-merged with config (secrets take priority)
-- Example: Keep OBS/Home Assistant credentials in `secrets.yaml`
-- `secrets.yaml` is automatically excluded from git
-
-For detailed setup instructions, see [SETUP.md](SETUP.md).
+**Config locations**: `~/.config/deckky/config.yaml` (preferred) or `./config.yaml`
+**Secrets**: Use `secrets.yaml` in the same directory for sensitive credentials
+**Details**: See [SETUP.md](SETUP.md) for complete setup instructions
 
 ## Dependencies
 
-Python dependencies (minimal set):
-- `streamdeck` - Stream Deck device support
-- `Pillow` - Image processing for button labels
-- `PyYAML` - YAML configuration parsing
-- `obs-websocket-py` - OBS WebSocket control (optional, for OBS features)
-- `websockets` - WebSocket client for Home Assistant (optional, for HA features)
-- `aiohttp` - HTTP client for Home Assistant (optional, for HA features)
-- `inotify_simple` - Efficient filesystem watching (optional, falls back to polling)
-
-System dependencies:
-- X11: `xdotool`
-- Wayland: `ydotool` and `ydotoold` service
-- Volume control: `pactl` (usually pre-installed)
+**Core**: `streamdeck`, `Pillow`, `PyYAML`
+**Optional**: `obs-websocket-py`, `websockets`, `aiohttp`, `inotify_simple`
+**System**: `xdotool` (X11) or `ydotool` (Wayland), `pactl` (volume)
 
 ## Configuration
 
@@ -306,106 +257,30 @@ The `group` parameter is optional:
 - If omitted: Switches page within button's own group (standard behavior)
 - If specified: Switches to the target page in the specified group
 
-## OBS Visual Feedback Features
+## Visual Theme
 
-### Visual Indicators
-- **Active Scene**: Tokyo Night green text (`#9ece6a`)
-- **Active Recording**: Tokyo Night red text (`#f7768e`)
-- **Active Streaming**: Tokyo Night red text (`#f7768e`)
-- **Inactive State**: Tokyo Night blue text (`#7aa2f7`)
-- **Background**: Black for all buttons
-
-### Tokyo Night Theme Colors
-- **Active scene green**: `#9ece6a` (Tokyo Night green)
-- **Active recording/streaming red**: `#f7768e` (Tokyo Night red)
-- **Inactive blue**: `#7aa2f7` (Tokyo Night blue)
-- **Background**: Black
-
-### Real-Time Updates
-- **Event-driven**: Visual feedback updates instantly via WebSocket event callbacks
-- **No polling overhead**: Zero CPU usage when OBS state is unchanged
-- **Auto-reconnection**: Automatically reconnects and updates if OBS restarts
-- **Scene tracking**: Scene buttons show green text when their scene is active
-- **Toggle behavior**: Single buttons that toggle based on current state with dynamic labels
-
-## Home Assistant Visual Feedback Features
-
-### Visual Indicators
-- **Active Light**: Tokyo Night green text (`#9ece6a`)
-- **Inactive Light**: Tokyo Night blue text (`#7aa2f7`)
-- **Background**: Black for all buttons
-
-### Tokyo Night Theme Colors
-- **Active light green**: `#9ece6a` (Tokyo Night green)
-- **Inactive light blue**: `#7aa2f7` (Tokyo Night blue)
-- **Background**: Black
-
-### Real-Time Updates
-- **Event-driven**: Visual feedback updates instantly via WebSocket event callbacks
-- **No polling overhead**: Zero CPU usage when Home Assistant state is unchanged
-- **Auto-reconnection**: Automatically reconnects and updates if Home Assistant restarts
-- **Light tracking**: Light buttons show green text when their light is on
-- **Toggle behavior**: Single buttons that toggle based on current state with dynamic labels
+**Colors**: Green (`#9ece6a`) for active, Red (`#f7768e`) for recording/streaming, Blue (`#7aa2f7`) for inactive
+**Background**: Black for all buttons
 
 ## OBS Setup
 
-1. **Enable WebSocket Server in OBS**:
-   - Open OBS
-   - Go to Tools → WebSocket Server Settings
-   - Enable "Enable WebSocket server"
-   - Note the port (default: 4455 for OBS 29+)
-   - Optionally set a password
-
-2. **Configure Deckky**:
-   - Add OBS settings to your config.yaml
-   - Create OBS control buttons as shown in examples
-   - Set up visual feedback with proper scene names
-
-3. **Test Connection**:
-   - Run Deckky with logging enabled to see connection status
-   - Check stdout for OBS connection messages
-   - Verify visual feedback works correctly (should be instant)
+1. In OBS: Tools → WebSocket Server Settings → Enable (default port: 4455)
+2. Add credentials to `config.yaml` or `secrets.yaml`
+3. Configure buttons with scene names matching OBS
 
 ## Home Assistant Setup
 
-1. **Create Long-Lived Access Token in Home Assistant**:
-   - Open Home Assistant
-   - Go to Profile (click your avatar in bottom left)
-   - Scroll down to "Long-Lived Access Tokens"
-   - Click "Create Token"
-   - Give it a name (e.g., "Deckky")
-   - Copy the generated token
-
-2. **Configure Deckky**:
-   - Add Home Assistant settings to your config.yaml
-   - Create Home Assistant light control buttons as shown in examples
-   - Set up visual feedback with proper entity IDs
-
-3. **Test Connection**:
-   - Run Deckky with logging enabled to see connection status
-   - Check stdout for Home Assistant connection messages
-   - Verify visual feedback works correctly (should be instant)
+1. In Home Assistant: Profile → Create Long-Lived Access Token
+2. Add token to `config.yaml` or `secrets.yaml`
+3. Configure buttons with entity IDs (e.g., `light.living_room`)
 
 ## Project Structure
 
-- `deckky.py` - Main application entry point
-- `streamdeck_manager.py` - Stream Deck device management with performance caching
-- `action_handler.py` - Button action handling and dispatch
-- `input_handler.py` - Keyboard input simulation (Wayland/X11)
-- `volume_control.py` - Volume control via pactl with event-based monitoring
-- `obs_control.py` - OBS WebSocket control with event-based updates
-- `homeassistant_control.py` - Home Assistant WebSocket control with event-based updates
-- `config_loader.py` - YAML configuration loader and validator
-
-## Architecture Highlights
-
-### Event-Driven Design
-- **OBS Updates**: WebSocket event callbacks (no polling)
-- **Home Assistant Updates**: WebSocket event callbacks (no polling)
-- **Volume Updates**: `pactl subscribe` events (no polling)
-- **Config Reloads**: inotify filesystem events (no polling, instant detection)
-
-### Performance Optimizations
-- **Three-level caching**: Font objects, font paths, and button images
-- **Lazy evaluation**: Resources loaded only when needed
-- **Race condition prevention**: Thread-safe dictionary copies for concurrent access
+- `deckky.py` - Main entry point
+- `streamdeck_manager.py` - Device management
+- `action_handler.py` - Button actions
+- `input_handler.py` - Keyboard simulation
+- `volume_control.py` - Volume control
+- `obs_control.py` - OBS integration
+- `homeassistant_control.py` - Home Assistant integration
+- `config_loader.py` - Configuration loader

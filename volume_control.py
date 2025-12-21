@@ -145,10 +145,10 @@ class VolumeControl:
 
             if is_muted:
                 label = f"Vol\nMuted"
-                fg_color = '#f7768e'  # Tokyo Night red for muted
+                fg_color = '#f7768e'  # Red for muted
             else:
                 label = f"Vol\n{volume}%"
-                fg_color = '#7aa2f7'  # Tokyo Night blue for normal
+                fg_color = '#7aa2f7'  # Blue for normal
 
             font_size = button_config.get('font_size', 'dynamic')
             return create_image_callback(label, bg_color=bg_color, fg_color=fg_color, font_size=font_size)

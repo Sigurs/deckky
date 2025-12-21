@@ -367,7 +367,7 @@ class StreamDeckManager:
 
     def _create_button_image(self, text: str, bg_color: str = 'black',
                             fg_color: str = '#7aa2f7', font_size='dynamic') -> bytes:
-        """Create a button image with text label (Tokyo Night theme)
+        """Create a button image with text label
 
         Args:
             text: Text to display on button

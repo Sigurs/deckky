@@ -375,7 +375,7 @@ class OBSControl:
         scene_name = button_config.get('scene', '')
 
         # Determine button appearance based on current OBS state
-        fg_color = '#7aa2f7'  # Tokyo Night blue
+        fg_color = '#7aa2f7'  # Default blue
         
         # Initialize label with default from button config
         label = button_config.get('label', '')
@@ -388,13 +388,13 @@ class OBSControl:
             logger.debug(f"Scene button check: button_scene='{scene_name}', current_scene='{self.current_scene}', match={current_scene_normalized == button_scene_normalized}")
 
             if current_scene_normalized == button_scene_normalized:
-                fg_color = '#9ece6a'  # Tokyo Night green for active scene
+                fg_color = '#9ece6a'  # Green for active scene
                 logger.debug(f"Scene '{scene_name}' is active, highlighting button")
         
         elif action in ['toggle_recording', 'start_recording', 'stop_recording']:
             # Red text if recording is active
             if self.is_recording:
-                fg_color = '#f7768e'  # Tokyo Night red
+                fg_color = '#f7768e'  # Red for active recording
                 if action == 'toggle_recording':
                     label = "Stop\nRecord"
                 else:
@@ -408,7 +408,7 @@ class OBSControl:
         elif action in ['toggle_streaming', 'start_streaming', 'stop_streaming']:
             # Red text if streaming is active
             if self.is_streaming:
-                fg_color = '#f7768e'  # Tokyo Night red
+                fg_color = '#f7768e'  # Red for active streaming
                 if action == 'toggle_streaming':
                     label = "Stop\nStream"
                 else:
