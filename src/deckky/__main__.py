@@ -21,8 +21,8 @@ def find_config_file() -> Path:
     """Find config file in prioritized locations
 
     Priority:
-    1. ~/.config/deckky/config.yaml
-    2. ./config.yaml (next to deckky.py)
+    1. ~/.config/deckky/config.yaml (XDG config directory)
+    2. ./config.yaml (current working directory)
 
     Returns:
         Path to config file
@@ -36,16 +36,16 @@ def find_config_file() -> Path:
         logger.info(f"Using config from: {xdg_config}")
         return xdg_config
 
-    # Priority 2: Local directory (next to deckky.py)
-    local_config = Path(__file__).parent / "config.yaml"
-    if local_config.exists():
-        logger.info(f"Using config from: {local_config}")
-        return local_config
+    # Priority 2: Current working directory
+    cwd_config = Path.cwd() / "config.yaml"
+    if cwd_config.exists():
+        logger.info(f"Using config from: {cwd_config}")
+        return cwd_config
 
     # No config found, provide helpful error message
     logger.error("Configuration file not found in any of these locations:")
     logger.error(f"  1. {xdg_config} (preferred)")
-    logger.error(f"  2. {local_config}")
+    logger.error(f"  2. {cwd_config}")
     logger.info(f"Please create config.yaml in one of these locations")
     logger.info(f"See config.example.yaml for reference")
 
