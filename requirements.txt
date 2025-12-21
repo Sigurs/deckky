@@ -1,0 +1,18 @@
+# Stream Deck support
+streamdeck>=0.9.5
+
+# Image processing for button labels
+Pillow>=10.0.0
+
+# YAML configuration
+PyYAML>=6.0
+
+# OBS WebSocket control
+obs-websocket-py>=1.0.0
+
+# Efficient filesystem watching (Linux only)
+inotify_simple>=1.3.5
+
+# Home Assistant API integration
+websockets>=11.0.0
+aiohttp>=3.8.0
