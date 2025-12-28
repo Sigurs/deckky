@@ -122,7 +122,7 @@ class ConfigLoader:
                 raise ValueError(f"{context} Button {button_id} missing 'type' field")
 
             button_type = button_config['type']
-            if button_type not in ['hotkey', 'volume', 'discord', 'page_switch', 'obs', 'homeassistant']:
+            if button_type not in ['hotkey', 'volume', 'discord', 'page_switch', 'obs', 'homeassistant', 'dlz_pad']:
                 raise ValueError(f"{context} Button {button_id} has invalid type: {button_type}")
 
             if button_type == 'volume' and 'action' not in button_config:

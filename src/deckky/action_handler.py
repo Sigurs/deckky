@@ -7,6 +7,7 @@ from deckky.input_handler import InputHandler
 from deckky.volume_control import VolumeControl
 from deckky.obs_control import OBSControl
 from deckky.homeassistant_control import HomeAssistantControl
+from deckky.dlz_control import DLZControl
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,10 @@ class ActionHandler:
             ssl=ha_config.get('ssl', True)
         )
 
+        # Initialize DLZ Creator control
+        dlz_host = config.get('dlz', {}).get('host', 'localhost')
+        self.dlz_control = DLZControl(host=dlz_host)
+
     def handle_press(self, button_id: int, button_config: Dict[str, Any]):
         """Handle button press event"""
         action_type = button_config.get('type')
@@ -53,6 +58,8 @@ class ActionHandler:
             self._handle_obs(button_config)
         elif action_type == 'homeassistant':
             self._handle_homeassistant(button_config)
+        elif action_type == 'dlz_pad':
+            self._handle_dlz_pad(button_id, button_config)
         else:
             logger.warning(f"Unknown action type: {action_type}")
 
@@ -243,3 +250,18 @@ class ActionHandler:
             ha_actions[action]()
         else:
             logger.warning(f"Unknown Home Assistant action: {action}")
+
+    def _handle_dlz_pad(self, button_id: int, button_config: Dict[str, Any]):
+        """Handle DLZ Creator pad playback"""
+        # The button_id is the physical button number on the Stream Deck
+        # We need to find which button index this is within the dlz_pads group
+        # Get the dlz_pads group configuration
+        dlz_pads_group = self.config.get('groups', {}).get('dlz_pads', {})
+        dlz_pads_buttons = dlz_pads_group.get('buttons', [])
+        
+        # Find the button index within the dlz_pads group
+        try:
+            button_index = dlz_pads_buttons.index(button_id)
+            self.dlz_control.play_pad(button_index)
+        except (ValueError, AttributeError):
+            logger.warning(f"Button {button_id} not found in dlz_pads group")

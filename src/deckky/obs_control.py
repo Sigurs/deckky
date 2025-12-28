@@ -5,6 +5,7 @@ import socket
 import threading
 import time
 from typing import Dict, Any, Optional, Callable
+from deckky.button_utils import update_buttons_for_type
 
 logger = logging.getLogger(__name__)
 
@@ -24,19 +25,16 @@ class OBSControl:
         self.host = host
         self.port = port
         self.password = password
-        self.poll_interval = poll_interval  # Only used for reconnection attempts now
+        self.poll_interval = poll_interval
         self.ws = None
         self.connected = False
 
-        # Status tracking
         self.current_scene = None
         self.is_recording = False
         self.is_streaming = False
 
-        # Status change callbacks
         self.status_callbacks = []
 
-        # Reconnection thread
         self.reconnection_thread = None
         self.monitoring = False
 
@@ -44,24 +42,19 @@ class OBSControl:
             logger.error("OBS WebSocket library not available. Install with: pip install obs-websocket-py")
             return
 
-        # Check if OBS is actually running before attempting connection
         if self._is_obs_running():
-            # Try initial connection
             self._connect()
-            # Get initial state
             self._get_initial_state()
         else:
             logger.info(f"OBS WebSocket server not detected at {self.host}:{self.port}, will retry when OBS starts")
 
-        # Start reconnection monitor (will connect when OBS becomes available)
         self._start_reconnection_monitor()
 
     def _is_obs_running(self) -> bool:
         """Check if OBS WebSocket server is listening on the configured port"""
         try:
-            # Try to connect to the port with a short timeout
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(0.5)  # 500ms timeout
+            sock.settimeout(0.5)
             result = sock.connect_ex((self.host, self.port))
             sock.close()
             return result == 0
@@ -79,10 +72,7 @@ class OBSControl:
             self.ws.connect()
             self.connected = True
             logger.info(f"Connected to OBS WebSocket at {self.host}:{self.port}")
-
-            # Register event handlers for real-time updates
             self._register_event_handlers()
-
             return True
         except Exception as e:
             self.connected = False
@@ -95,15 +85,9 @@ class OBSControl:
             return
 
         try:
-            # Register handlers for scene changes
             self.ws.register(self._on_scene_changed, events.CurrentProgramSceneChanged)
-
-            # Register handlers for recording state changes
             self.ws.register(self._on_record_state_changed, events.RecordStateChanged)
-
-            # Register handlers for streaming state changes
             self.ws.register(self._on_stream_state_changed, events.StreamStateChanged)
-
             logger.debug("Registered OBS event handlers")
         except Exception as e:
             logger.error(f"Failed to register OBS event handlers: {e}")
@@ -115,12 +99,10 @@ class OBSControl:
             return
             
         try:
-            # Get initial state
             current_scene = self.get_current_scene()
             recording_status = self.get_recording_status()
             streaming_status = self.get_streaming_status()
 
-            # Set initial tracked status
             if current_scene:
                 self.current_scene = current_scene
                 logger.debug(f"Initial OBS scene: {current_scene}")
@@ -135,7 +117,6 @@ class OBSControl:
                 
         except Exception as e:
             logger.error(f"Failed to get initial OBS state: {e}")
-            # Don't let OBS connection failures break the entire application
             logger.warning("OBS connection issues detected, continuing with limited functionality")
 
     def _on_scene_changed(self, event):
@@ -152,7 +133,6 @@ class OBSControl:
     def _on_record_state_changed(self, event):
         """Event handler for recording state changes"""
         try:
-            # Event has outputActive field for recording state
             is_active = event.getOutputActive()
             if is_active != self.is_recording:
                 logger.debug(f"Recording state changed: {self.is_recording} -> {is_active}")
@@ -164,7 +144,6 @@ class OBSControl:
     def _on_stream_state_changed(self, event):
         """Event handler for streaming state changes"""
         try:
-            # Event has outputActive field for streaming state
             is_active = event.getOutputActive()
             if is_active != self.is_streaming:
                 logger.debug(f"Streaming state changed: {self.is_streaming} -> {is_active}")
@@ -193,29 +172,22 @@ class OBSControl:
 
     def _reconnection_monitor(self):
         """Monitor connection and attempt reconnection if disconnected"""
-        reconnect_interval = 5  # Seconds between reconnection attempts
+        reconnect_interval = 5
 
         while self.monitoring:
-            # Only attempt reconnection if disconnected
             if not self.connected:
-                # First check if OBS is actually running before attempting connection
                 if self._is_obs_running():
                     logger.info("OBS WebSocket server detected, attempting to connect...")
                     if self._connect():
-                        # Successfully reconnected, get initial state
                         self._get_initial_state()
-                        # Notify callbacks to update button states
                         self._notify_callbacks()
                     else:
-                        # Connection failed despite port being open, wait before trying again
                         time.sleep(reconnect_interval)
                         continue
                 else:
-                    # OBS not running, wait before checking again
                     time.sleep(reconnect_interval)
                     continue
 
-            # When connected, just sleep and check periodically
             time.sleep(reconnect_interval)
 
     def add_status_callback(self, callback: Callable[[], None]):
@@ -227,12 +199,10 @@ class OBSControl:
         if not self.connected or not self.ws:
             return self._connect()
 
-        # Try a simple ping to check if connection is still alive
         try:
             self.ws.call(requests.GetVersion())
             return True
         except Exception:
-            # Connection is dead, try to reconnect
             self.connected = False
             return self._connect()
 
@@ -361,40 +331,26 @@ class OBSControl:
             return None
 
     def setup_obs_button(self, button_config: dict, create_image_callback, bg_color: str = 'black') -> bytes:
-        """Setup OBS button with visual feedback based on current state
-
-        Args:
-            button_config: Button configuration dictionary
-            create_image_callback: Function to create button image with text/colors
-            bg_color: Background color for the button (default: black)
-
-        Returns:
-            Button image bytes
-        """
+        """Setup OBS button with visual feedback. Returns button image bytes."""
         action = button_config.get('action')
         scene_name = button_config.get('scene', '')
 
-        # Determine button appearance based on current OBS state
-        fg_color = '#7aa2f7'  # Default blue
-        
-        # Initialize label with default from button config
+        fg_color = '#7aa2f7'
         label = button_config.get('label', '')
         
         if action == 'scene_switch' and scene_name:
-            # Green text if this scene is currently active (case-insensitive comparison)
             current_scene_normalized = self.current_scene.strip().lower() if self.current_scene else None
             button_scene_normalized = scene_name.strip().lower()
 
             logger.debug(f"Scene button check: button_scene='{scene_name}', current_scene='{self.current_scene}', match={current_scene_normalized == button_scene_normalized}")
 
             if current_scene_normalized == button_scene_normalized:
-                fg_color = '#9ece6a'  # Green for active scene
+                fg_color = '#9ece6a'
                 logger.debug(f"Scene '{scene_name}' is active, highlighting button")
         
         elif action in ['toggle_recording', 'start_recording', 'stop_recording']:
-            # Red text if recording is active
             if self.is_recording:
-                fg_color = '#f7768e'  # Red for active recording
+                fg_color = '#f7768e'
                 if action == 'toggle_recording':
                     label = "Stop\nRecord"
                 else:
@@ -406,9 +362,8 @@ class OBSControl:
                     label = button_config.get('label', 'Record')
         
         elif action in ['toggle_streaming', 'start_streaming', 'stop_streaming']:
-            # Red text if streaming is active
             if self.is_streaming:
-                fg_color = '#f7768e'  # Red for active streaming
+                fg_color = '#f7768e'
                 if action == 'toggle_streaming':
                     label = "Stop\nStream"
                 else:
@@ -419,45 +374,19 @@ class OBSControl:
                 else:
                     label = button_config.get('label', 'Stream')
         
-        # Create a button image with determined colors
         font_size = button_config.get('font_size', 'dynamic')
         return create_image_callback(label, bg_color=bg_color, fg_color=fg_color, font_size=font_size)
 
     def update_obs_buttons(self, groups: dict, group_pages: dict, button_to_group: dict,
                            deck, create_image_callback):
-        """Update all OBS buttons with current state
-
-        Args:
-            groups: Groups configuration
-            group_pages: Current page for each group
-            button_to_group: Mapping of button numbers to groups
-            deck: Stream Deck object
-            create_image_callback: Function to create button images
-        """
-        for group_name, group_config in groups.items():
-            pages = group_config.get('pages', {})
-            button_range = group_config.get('buttons', [])
-
-            # Get the current page for this group
-            current_page = group_pages.get(group_name, 0)
-
-            # Only update buttons on the currently visible page for this group
-            if current_page not in pages:
-                continue
-
-            page_config = pages[current_page]
-            page_buttons = page_config.get('buttons', {})
-
-            for button_id, button_config in page_buttons.items():
-                button_num = int(button_id)
-
-                # Only update OBS buttons
-                if (button_config.get('type') == 'obs' and
-                    button_num in button_range):
-
-                    font_size = button_config.get('font_size', 'dynamic')
-                    image = self.setup_obs_button(button_config, create_image_callback)
-                    deck.set_key_image(button_num, image)
+        """Update all OBS buttons with current state"""
+        updated = update_buttons_for_type(
+            groups, group_pages, button_to_group,
+            deck, create_image_callback, 'obs',
+            self.setup_obs_button
+        )
+        if updated > 0:
+            logger.info(f"Updated {updated} OBS button(s)")
 
     def disconnect(self):
         """Disconnect from OBS WebSocket"""

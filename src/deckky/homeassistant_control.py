@@ -6,6 +6,7 @@ import logging
 import threading
 import time
 from typing import Dict, Any, Optional, Callable, Set
+from deckky.button_utils import update_buttons_for_type
 
 logger = logging.getLogger(__name__)
 
@@ -30,24 +31,20 @@ class HomeAssistantControl:
         self.session = None
         self.connected = False
 
-        # Entity state tracking
-        self.entity_states = {}  # entity_id -> state dict
-        self.light_entities = set()  # Set of light entity IDs we're tracking
+        self.entity_states = {}
+        self.light_entities = set()
 
-        # Status change callbacks
         self.status_callbacks = []
 
-        # WebSocket thread
         self.ws_thread = None
         self.ws_loop = None
         self.monitoring = False
-        self.reconnect_interval = 5  # Seconds between reconnection attempts
+        self.reconnect_interval = 5
 
         if not HA_AVAILABLE:
             logger.error("Home Assistant libraries not available. Install with: pip install websockets aiohttp")
             return
 
-        # Start WebSocket connection in background thread
         self._start_websocket_client()
 
     def _get_websocket_url(self) -> str:
@@ -69,7 +66,6 @@ class HomeAssistantControl:
 
     def _websocket_client_thread(self):
         """WebSocket client running in background thread"""
-        # Create new event loop for this thread
         self.ws_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.ws_loop)
 
@@ -101,10 +97,8 @@ class HomeAssistantControl:
             return False
 
         try:
-            # Connect to WebSocket
             self.ws = await websockets.connect(self._get_websocket_url())
             
-            # Wait for auth required message
             auth_msg = await self.ws.recv()
             auth_data = json.loads(auth_msg)
             
@@ -112,14 +106,12 @@ class HomeAssistantControl:
                 logger.error("Unexpected auth message from Home Assistant")
                 return False
 
-            # Send authentication
             auth_response = {
                 "type": "auth",
                 "access_token": self.access_token
             }
             await self.ws.send(json.dumps(auth_response))
             
-            # Wait for auth response
             auth_result = await self.ws.recv()
             auth_result_data = json.loads(auth_result)
             
@@ -130,10 +122,7 @@ class HomeAssistantControl:
             self.connected = True
             logger.info(f"Connected to Home Assistant WebSocket at {self.host}:{self.port}")
 
-            # Subscribe to state changes
             await self._subscribe_to_events()
-            
-            # Get initial states for tracked entities
             await self._get_initial_states()
 
             return True
@@ -145,7 +134,6 @@ class HomeAssistantControl:
     async def _subscribe_to_events(self):
         """Subscribe to state change events"""
         try:
-            # Subscribe to all state changes
             subscribe_msg = {
                 "id": 1,
                 "type": "subscribe_events",
@@ -157,17 +145,10 @@ class HomeAssistantControl:
             logger.error(f"Failed to subscribe to Home Assistant events: {e}")
 
     async def _fetch_entity_state(self, entity_id: str, retry_delay: float = 0.1):
-        """Fetch current state for a specific entity
-
-        Args:
-            entity_id: Entity ID to fetch state for
-            retry_delay: Delay before fetching to allow HA to process state change
-        """
+        """Fetch current state for a specific entity"""
         if not self.access_token:
             return
 
-        # Small delay to allow Home Assistant to process the state change
-        # This helps avoid race conditions where we fetch before HA updates
         if retry_delay > 0:
             await asyncio.sleep(retry_delay)
 
@@ -185,7 +166,6 @@ class HomeAssistantControl:
                         self.entity_states[entity_id] = state_data
                         logger.info(f"Fetched updated state for {entity_id}: {old_state} -> {new_state}")
 
-                        # Notify callbacks of state change
                         self._notify_callbacks()
                     else:
                         logger.warning(f"Failed to fetch state for {entity_id}: {response.status}")
@@ -198,11 +178,9 @@ class HomeAssistantControl:
             return
 
         try:
-            # Create HTTP session for REST API
             headers = {"Authorization": f"Bearer {self.access_token}"}
 
             async with aiohttp.ClientSession(headers=headers) as session:
-                # Get states for all tracked light entities
                 for entity_id in self.light_entities:
                     try:
                         url = f"{self._get_api_url()}/states/{entity_id}"
@@ -216,7 +194,6 @@ class HomeAssistantControl:
                     except Exception as e:
                         logger.error(f"Error getting state for {entity_id}: {e}")
 
-            # Notify callbacks of initial state
             self._notify_callbacks()
 
         except Exception as e:
@@ -255,7 +232,6 @@ class HomeAssistantControl:
             event = event_data.get('data', {})
             entity_id = event.get('entity_id')
             
-            # Only process if we're tracking this entity
             if entity_id not in self.light_entities:
                 return
 
@@ -266,7 +242,6 @@ class HomeAssistantControl:
                 self.entity_states[entity_id] = new_state
                 logger.debug(f"State changed for {entity_id}: {old_state.get('state') if old_state else 'None'} -> {new_state.get('state')}")
                 
-                # Notify callbacks of state change
                 self._notify_callbacks()
 
         except Exception as e:
@@ -289,9 +264,7 @@ class HomeAssistantControl:
         self.light_entities.add(entity_id)
         logger.debug(f"Now tracking light entity: {entity_id}")
         
-        # If connected, get initial state for this entity
         if self.connected and self.ws_loop:
-            # Schedule the initial state fetch in the WebSocket thread
             asyncio.run_coroutine_threadsafe(
                 self._get_initial_states(), 
                 self.ws_loop
@@ -310,7 +283,6 @@ class HomeAssistantControl:
             logger.error("WebSocket loop not available")
             return False
 
-        # Check if the event loop is still running
         if self.ws_loop.is_closed():
             logger.error("WebSocket event loop is closed")
             return False
@@ -320,12 +292,11 @@ class HomeAssistantControl:
             return False
 
         try:
-            # Run the async service call in the WebSocket thread
             future = asyncio.run_coroutine_threadsafe(
                 self._call_service_async(domain, service, entity_id, **kwargs),
                 self.ws_loop
             )
-            return future.result(timeout=10)  # 10 second timeout
+            return future.result(timeout=10)
         except Exception as e:
             logger.error(f"Failed to call Home Assistant service: {e}")
             return False
@@ -349,8 +320,6 @@ class HomeAssistantControl:
                     if response.status == 200:
                         logger.info(f"Called Home Assistant service {domain}.{service} for {entity_id}")
 
-                        # Immediately fetch updated state after successful service call
-                        # This provides faster UI feedback while we wait for WebSocket event
                         await self._fetch_entity_state(entity_id)
 
                         return True
@@ -389,82 +358,37 @@ class HomeAssistantControl:
         logger.warning(f"is_light_on({entity_id}): No state data available, assuming OFF")
         return False
 
-    def setup_homeassistant_button(self, button_config: dict, create_image_callback) -> bytes:
-        """Setup Home Assistant button with visual feedback based on current state
-
-        Args:
-            button_config: Button configuration dictionary
-            create_image_callback: Function to create button image with text/colors
-
-        Returns:
-            Button image bytes
-        """
+    def setup_homeassistant_button(self, button_config: dict, create_image_callback, bg_color: str = 'black') -> bytes:
+        """Setup Home Assistant button with visual feedback. Returns button image bytes."""
         action = button_config.get('action')
         entity_id = button_config.get('entity_id', '')
 
-        # Determine button appearance based on current light state
-        bg_color = 'black'
-        fg_color = '#7aa2f7'  # Default blue (default/off state)
+        fg_color = '#7aa2f7'
 
-        # Always use the label from button config (static label)
         label = button_config.get('label', '')
 
-        # Check if this is a light entity and update color based on state
         if entity_id.startswith('light.'):
             is_on = self.is_light_on(entity_id)
             logger.debug(f"Button setup for {entity_id}: is_on={is_on}, label='{label}'")
 
             if is_on:
-                fg_color = '#9ece6a'  # Green for lights that are on
+                fg_color = '#9ece6a'
             else:
-                fg_color = '#7aa2f7'  # Blue for lights that are off
+                fg_color = '#7aa2f7'
 
-        # Create a button image with determined colors
         font_size = button_config.get('font_size', 'dynamic')
         return create_image_callback(label, bg_color=bg_color, fg_color=fg_color, font_size=font_size)
 
     def update_homeassistant_buttons(self, groups: dict, group_pages: dict, button_to_group: dict,
                                    deck, create_image_callback):
-        """Update all Home Assistant buttons with current state
-
-        Args:
-            groups: Groups configuration
-            group_pages: Current page for each group
-            button_to_group: Mapping of button numbers to groups
-            deck: Stream Deck object
-            create_image_callback: Function to create button images
-        """
-        updated_count = 0
-        for group_name, group_config in groups.items():
-            pages = group_config.get('pages', {})
-            button_range = group_config.get('buttons', [])
-
-            # Get the current page for this group
-            current_page = group_pages.get(group_name, 0)
-
-            # Only update buttons on the currently visible page for this group
-            if current_page not in pages:
-                continue
-
-            page_config = pages[current_page]
-            page_buttons = page_config.get('buttons', {})
-
-            for button_id, button_config in page_buttons.items():
-                button_num = int(button_id)
-
-                # Only update Home Assistant buttons
-                if (button_config.get('type') == 'homeassistant' and
-                    button_num in button_range):
-
-                    entity_id = button_config.get('entity_id', '')
-                    font_size = button_config.get('font_size', 'dynamic')
-                    image = self.setup_homeassistant_button(button_config, create_image_callback)
-                    deck.set_key_image(button_num, image)
-                    updated_count += 1
-                    logger.debug(f"Updated HA button {button_num} for {entity_id}")
-
-        if updated_count > 0:
-            logger.info(f"Updated {updated_count} Home Assistant button(s)")
+        """Update all Home Assistant buttons with current state"""
+        updated = update_buttons_for_type(
+            groups, group_pages, button_to_group,
+            deck, create_image_callback, 'homeassistant',
+            self.setup_homeassistant_button
+        )
+        if updated > 0:
+            logger.info(f"Updated {updated} Home Assistant button(s)")
 
     def disconnect(self):
         """Disconnect from Home Assistant WebSocket"""
@@ -472,7 +396,6 @@ class HomeAssistantControl:
 
         if self.ws and self.connected:
             try:
-                # Schedule the disconnect in the WebSocket thread
                 if self.ws_loop and not self.ws_loop.is_closed():
                     asyncio.run_coroutine_threadsafe(self.ws.close(), self.ws_loop)
                 logger.info("Disconnected from Home Assistant WebSocket")
@@ -485,5 +408,4 @@ class HomeAssistantControl:
         if self.ws_thread and self.ws_thread.is_alive():
             self.ws_thread.join(timeout=2)
 
-        # Clear the event loop reference after thread has stopped
         self.ws_loop = None

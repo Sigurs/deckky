@@ -9,11 +9,8 @@ import logging
 from pathlib import Path
 from deckky.streamdeck_manager import StreamDeckManager
 from deckky.config_loader import ConfigLoader
+from deckky.logging_config import setup_logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
 logger = logging.getLogger(__name__)
 
 
@@ -61,6 +58,8 @@ def main():
 
     try:
         config = ConfigLoader.load(config_file)
+        # Setup logging after loading config (to respect logging config)
+        setup_logging(config)
         logger.info("Configuration loaded successfully")
     except Exception as e:
         logger.error(f"Failed to load configuration: {e}")

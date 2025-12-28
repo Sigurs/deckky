@@ -95,6 +95,12 @@ class StreamDeckManager:
             # Longer delay to ensure Home Assistant initial states are fetched
             time.sleep(2.0)
 
+        # Set up DLZ Creator status callback for visual feedback BEFORE initializing buttons
+        if hasattr(self.action_handler, 'dlz_control') and self.action_handler.dlz_control:
+            self.action_handler.dlz_control.add_status_callback(self._on_dlz_status_change)
+            # Small delay to ensure DLZ initial connection is established
+            time.sleep(1.0)
+
         # Initialize buttons (now OBS and HA states will be available)
         self._initialize_buttons()
 
@@ -286,6 +292,16 @@ class StreamDeckManager:
                     button_config, self._create_button_image, group_bg_color
                 )
                 self.deck.set_key_image(button_num, image)
+            # Handle DLZ Pad buttons with visual feedback
+            elif button_type == 'dlz_pad':
+                if hasattr(self.action_handler, 'dlz_control') and self.action_handler.dlz_control:
+                    logger.debug(f"Setting up DLZ pad button {button_num}: {button_config}")
+                    # Calculate button index within group (for pad mapping)
+                    button_index = button_range.index(button_num)
+                    image = self.action_handler.dlz_control.setup_dlz_button(
+                        button_config, self._create_button_image, button_index
+                    )
+                    self.deck.set_key_image(button_num, image)
             elif label:
                 image = self._create_button_image(label, bg_color=group_bg_color, font_size=font_size)
                 self.deck.set_key_image(button_num, image)
@@ -312,6 +328,18 @@ class StreamDeckManager:
         if hasattr(self.action_handler, 'ha_control') and self.action_handler.ha_control:
             self.action_handler.ha_control.update_homeassistant_buttons(
                 self.groups, self.group_pages, self.button_to_group, 
+                self.deck, self._create_button_image
+            )
+
+    def _on_dlz_status_change(self):
+        """Callback for DLZ Creator status changes - update button appearances"""
+        if not self.running:
+            return
+            
+        # Use DLZ control module to update all DLZ pad buttons
+        if hasattr(self.action_handler, 'dlz_control') and self.action_handler.dlz_control:
+            self.action_handler.dlz_control.update_dlz_buttons(
+                self.groups, self.group_pages, self.button_to_group,
                 self.deck, self._create_button_image
             )
 
