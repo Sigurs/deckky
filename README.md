@@ -36,6 +36,12 @@ If you are an LLM, please read LLM.md.
 - Real-time visual feedback (green when on, blue when off)
 - Event-based updates with auto-reconnection
 
+### DLZ Creator Integration
+- Pad playback control via WebSocket
+- Real-time visual feedback (green when playing, blue when stopped)
+- Event-based updates with auto-reconnection
+- Automatic pad mapping to group buttons
+
 ### Advanced Features
 - **Spatial Groups** - Independent page systems with cross-group switching
 - **Event-driven architecture** - No polling, instant updates with minimal CPU usage
@@ -109,20 +115,27 @@ obs:
 
 **Note**: OBS integration uses event-based updates via WebSocket callbacks, providing instant visual feedback with no polling overhead.
 
-### Home Assistant WebSocket Configuration
+### DLZ Creator Configuration
 
-Add Home Assistant connection settings to your config.yaml:
+Add DLZ Creator connection settings to your config.yaml:
 
 ```yaml
-# Home Assistant WebSocket connection settings
-homeassistant:
+# DLZ Creator connection settings
+dlz:
   host: "localhost"
-  port: 8123
-  access_token: "your_long_lived_access_token"
-  ssl: true  # Set to false if using HTTP instead of HTTPS
 ```
 
-**Note**: Home Assistant integration uses event-based updates via WebSocket callbacks, providing instant visual feedback with no polling overhead.
+**Note**: DLZ Creator integration uses event-based updates via WebSocket callbacks, providing instant visual feedback with no polling overhead.
+
+### DLZ Pad Button Configuration
+
+```yaml
+button_id:
+  type: dlz_pad
+  label: "Pad 1"  # Optional label (will show pad name if not specified)
+```
+
+Pads are automatically mapped to buttons in the `dlz_pads` group in the order they appear in DLZ Creator. The first button in the group maps to pad 0, the second to pad 1, and so on.
 
 ### Secrets Management with secrets.yaml
 
@@ -203,6 +216,7 @@ groups:
 - **discord**: Discord integration (push-to-talk/mute/deafen)
 - **obs**: OBS WebSocket control (scene switching, recording, streaming)
 - **homeassistant**: Home Assistant WebSocket control (lights, switches, sensors)
+- **dlz_pad**: DLZ Creator pad playback control
 - **page_switch**: Navigate between pages within a group or across groups
 
 ### OBS Button Configuration
@@ -286,6 +300,13 @@ The `group` parameter is optional:
 2. Add credentials to `config.yaml` or `secrets.yaml`
 3. Configure buttons with scene names matching OBS
 
+## DLZ Creator Setup
+
+1. Enable WebSocket server in DLZ Creator settings
+2. Add connection settings to `config.yaml` (host defaults to "localhost")
+3. Create a `dlz_pads` group in your config with buttons matching your pad count
+4. Configure each button with `type: dlz_pad`
+
 ## Home Assistant Setup
 
 1. In Home Assistant: Profile → Create Long-Lived Access Token
@@ -305,7 +326,11 @@ deckky/
 │   ├── volume_control.py
 │   ├── obs_control.py
 │   ├── homeassistant_control.py
-│   └── config_loader.py
+│   ├── dlz_control.py   # DLZ Creator integration
+│   ├── dlz_creator_client.py  # DLZ Creator WebSocket client
+│   ├── config_loader.py
+│   ├── logging_config.py
+│   └── button_utils.py  # Shared button update utilities
 ├── pyproject.toml       # Package configuration
 ├── install.sh           # Installation script
 └── config.example.yaml  # Example configuration
